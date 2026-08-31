@@ -35,4 +35,18 @@ data/db.json
 
 ## Next Step: Cloudflare
 
-ขั้นต่อไปสำหรับขึ้น Cloudflare ควรแยกฐานข้อมูลจากไฟล์ JSON ไปใช้ Cloudflare D1 และเก็บไฟล์ลายเซ็นใน Cloudflare R2 เพื่อให้ระบบ online ได้จริงและข้อมูลไม่หายเมื่อ deploy ใหม่
+ระบบ Cloudflare Pages Functions รองรับ D1 binding ชื่อ `DB` แล้ว
+
+ตั้งค่าบน Cloudflare:
+
+1. ไปที่ Storage & databases > D1 SQL Database
+2. Create database ชื่อ `phithan5s-db`
+3. ไปที่ Workers & Pages > phithan5s > Settings > Bindings
+4. Add binding > D1 database
+5. Variable name ใส่ `DB`
+6. เลือก database `phithan5s-db`
+7. Save แล้ว Redeploy
+
+เมื่อมี binding `DB` แล้ว ระบบจะสร้างตาราง `app_state` อัตโนมัติและ seed ข้อมูลตั้งต้นจาก `functions/_seed.js` ในครั้งแรก จากนั้นการเพิ่ม User, สาขา, แผนก, Template และประวัติการตรวจจะถูกเก็บลง D1
+
+ขั้นต่อไปหลัง D1 คือย้ายไฟล์ลายเซ็นจาก memory/base64 ไป Cloudflare R2

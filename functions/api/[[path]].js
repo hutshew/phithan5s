@@ -1,9 +1,40 @@
 import { seed } from "../_seed.js";
 
-const db = globalThis.__phithan5sDb || structuredClone(seed);
+let db = globalThis.__phithan5sDb || structuredClone(seed);
 const sessions = globalThis.__phithan5sSessions || new Map();
 globalThis.__phithan5sDb = db;
 globalThis.__phithan5sSessions = sessions;
+const DB_STATE_KEY = "phithan5s";
+
+async function loadDb(env) {
+  if (!env.DB) return globalThis.__phithan5sDb || structuredClone(seed);
+
+  try {
+    await env.DB.prepare(
+      "CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)",
+    ).run();
+    const row = await env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(DB_STATE_KEY).first();
+    if (row?.value) return JSON.parse(row.value);
+
+    await env.DB.prepare("INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?)").bind(
+      DB_STATE_KEY,
+      JSON.stringify(seed),
+      new Date().toISOString(),
+    ).run();
+    return structuredClone(seed);
+  } catch (error) {
+    return globalThis.__phithan5sDb || structuredClone(seed);
+  }
+}
+
+async function persistDb(env) {
+  globalThis.__phithan5sDb = db;
+  if (!env.DB) return;
+
+  await env.DB.prepare(
+    "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+  ).bind(DB_STATE_KEY, JSON.stringify(db), new Date().toISOString()).run();
+}
 
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -152,10 +183,12 @@ function routePath(context) {
   return Array.isArray(parts) ? parts.join("/") : String(parts || "");
 }
 
-export async function onRequest({ request, params }) {
+export async function onRequest(context) {
+  const { request, params, env = {} } = context;
   const url = new URL(request.url);
   const method = request.method;
   const path = Array.isArray(params.path) ? params.path.join("/") : String(params.path || "");
+  db = await loadDb(env);
 
   if (method === "POST" && path === "login") {
     const input = await body(request);
@@ -207,6 +240,7 @@ export async function onRequest({ request, params }) {
     if (db.users.some((row) => row.username === username)) return json({ error: "username นี้มีอยู่แล้ว" }, 409);
     const user = { username, password: String(input.password), name: String(input.name), role: String(input.role || "Inspector") };
     db.users.push(user);
+    await persistDb(env);
     return json(publicUser(user), 201);
   }
 
@@ -220,6 +254,7 @@ export async function onRequest({ request, params }) {
     user.name = String(input.name || user.name);
     user.role = String(input.role || user.role);
     if (input.password) user.password = String(input.password);
+    await persistDb(env);
     return json(publicUser(user));
   }
 
@@ -229,6 +264,7 @@ export async function onRequest({ request, params }) {
     const username = decodeURIComponent(path.slice("users/".length));
     if (username === "admin") return json({ error: "ไม่สามารถลบ admin หลักได้" }, 400);
     db.users = db.users.filter((row) => row.username !== username);
+    await persistDb(env);
     return json({ success: true });
   }
 
@@ -241,6 +277,7 @@ export async function onRequest({ request, params }) {
     if (db.branches.some((row) => row.code === code)) return json({ error: "รหัสสาขานี้มีอยู่แล้ว" }, 409);
     const branch = { code, name: String(input.name).trim() };
     db.branches.push(branch);
+    await persistDb(env);
     return json(branch, 201);
   }
 
@@ -251,6 +288,7 @@ export async function onRequest({ request, params }) {
     const branch = db.branches.find((row) => row.code === code);
     if (!branch) return json({ error: "ไม่พบสาขา" }, 404);
     branch.name = String((await body(request)).name || branch.name).trim();
+    await persistDb(env);
     return json(branch);
   }
 
@@ -260,6 +298,7 @@ export async function onRequest({ request, params }) {
     const code = decodeURIComponent(path.slice("branches/".length));
     if (db.inspections.some((row) => row.branchCode === code)) return json({ error: "มีประวัติตรวจของสาขานี้อยู่ ไม่สามารถลบได้" }, 409);
     db.branches = db.branches.filter((row) => row.code !== code);
+    await persistDb(env);
     return json({ success: true });
   }
 
@@ -278,6 +317,7 @@ export async function onRequest({ request, params }) {
       departmentCode: code,
       items: [{ id: `${code}-001`, itemNo: 1, category: "ทั่วไป", title: "หัวข้อตรวจใหม่", maxScore: 5, weight: 5 }],
     });
+    await persistDb(env);
     return json(department, 201);
   }
 
@@ -288,6 +328,7 @@ export async function onRequest({ request, params }) {
     const department = db.departments.find((row) => row.code === code);
     if (!department) return json({ error: "ไม่พบแผนก" }, 404);
     department.name = String((await body(request)).name || department.name).trim();
+    await persistDb(env);
     return json(department);
   }
 
@@ -298,6 +339,7 @@ export async function onRequest({ request, params }) {
     if (db.inspections.some((row) => row.departmentCode === code)) return json({ error: "มีประวัติตรวจของแผนกนี้อยู่ ไม่สามารถลบได้" }, 409);
     db.departments = db.departments.filter((row) => row.code !== code);
     db.templates = db.templates.filter((row) => row.departmentCode !== code);
+    await persistDb(env);
     return json({ success: true });
   }
 
@@ -325,6 +367,7 @@ export async function onRequest({ request, params }) {
       maxScore: Math.max(1, Math.min(5, Number(item.maxScore || 5))),
       weight: Math.max(1, Number(item.weight || 5)),
     }));
+    await persistDb(env);
     return json(template);
   }
 
@@ -356,6 +399,7 @@ export async function onRequest({ request, params }) {
     if (error) return error;
     const id = decodeURIComponent(path.slice("inspections/".length));
     db.inspections = db.inspections.filter((row) => row.id !== id);
+    await persistDb(env);
     return json({ success: true });
   }
 
@@ -397,6 +441,7 @@ export async function onRequest({ request, params }) {
       scores: calculated.normalizedScores,
     };
     db.inspections.push(inspection);
+    await persistDb(env);
     return json(inspection, 201);
   }
 

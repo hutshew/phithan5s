@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+
+# Local runtime database and uploaded signatures/evidence.
+data/db.json
+data/*.tmp
+public/uploads/*
+!public/uploads/.gitkeep
+
+# OS files
+Thumbs.db
+.DS_Store

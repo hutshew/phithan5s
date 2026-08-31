@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ระบบตรวจรายงานและประเมิณ 5 ส</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/logo_phithan.png" alt="โลโก้พิธาน" />
+          <div>
+            <strong>ระบบตรวจรายงานและประเมิณ 5 ส</strong>
+            <small>ใช้งานจริงแบบทดลอง</small>
+          </div>
+        </div>
+        <nav class="nav-list" aria-label="เมนูหลัก">
+          <a class="active" href="#dashboard" data-page-link="dashboard">Dashboard</a>
+          <a href="#entry" data-page-link="entry">กรอกผลตรวจ</a>
+          <a href="#history" data-page-link="history">ประวัติย้อนหลัง</a>
+          <a href="#annual" data-page-link="annual">สรุปรายปี</a>
+          <a href="#templates" data-page-link="templates">Template</a>
+          <a href="#admin" data-page-link="admin" class="admin-nav" hidden>Admin</a>
+        </nav>
+        <div class="sidebar-note">
+          <span>สถานะระบบ</span>
+          <strong>บันทึกข้อมูลจริง</strong>
+          <small>ฐานข้อมูลไฟล์ JSON ในเครื่องนี้</small>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div>
+            <p class="eyebrow">MVP สำหรับทดลองให้ user กรอกจริง</p>
+            <h1 id="pageTitle">ระบบตรวจรายงานและประเมิณ 5 ส</h1>
+          </div>
+          <div class="top-actions">
+            <form class="login-box" id="loginForm">
+              <input id="usernameInput" type="text" placeholder="username" autocomplete="username" />
+              <input id="passwordInput" type="password" placeholder="password" autocomplete="current-password" />
+              <button class="ghost-button" type="submit">Login</button>
+            </form>
+            <div class="user-box" id="userBox" hidden>
+              <span id="userLabel"></span>
+              <button class="ghost-button" type="button" id="logoutBtn">Logout</button>
+            </div>
+            <label class="month-filter">
+              รอบเดือน
+              <input id="dashboardMonth" type="month" value="2026-08" />
+            </label>
+            <button class="ghost-button" type="button" id="refreshBtn">Refresh</button>
+          </div>
+        </section>
+
+        <section id="loginRequired" class="panel login-required">
+          <img class="login-logo" src="./assets/logo_phithan.png" alt="โลโก้พิธาน" />
+          <p class="eyebrow">Login Required</p>
+          <h2>ระบบตรวจรายงานและประเมิณ 5 ส</h2>
+          <p>กรุณา login เพื่อเข้าใช้งานระบบ</p>
+        </section>
+
+        <section id="dashboard" class="summary-grid page-section" data-page="dashboard">
+          <article class="metric">
+            <span>คะแนนเฉลี่ย</span>
+            <strong id="avgScore">0</strong>
+            <small>จาก 100 คะแนน</small>
+          </article>
+          <article class="metric good">
+            <span>ผ่านเกณฑ์</span>
+            <strong id="passedCount">0</strong>
+            <small>รายการตรวจ</small>
+          </article>
+          <article class="metric warn">
+            <span>ต้องแก้ไข</span>
+            <strong id="fixCount">0</strong>
+            <small>รายการตรวจ</small>
+          </article>
+          <article class="metric danger">
+            <span>ความเสี่ยง</span>
+            <strong id="riskCount">0</strong>
+            <small>รายการตรวจ</small>
+          </article>
+        </section>
+
+        <section class="workspace-grid page-section" data-page="entry">
+          <article id="entry" class="panel entry-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">กรอกผลตรวจ</p>
+                <h2>บันทึกผลตรวจประจำเดือน</h2>
+              </div>
+              <span class="status-pill" id="saveStatus">Ready</span>
+            </div>
+
+            <form id="inspectionForm">
+              <div class="form-grid">
+                <label>
+                  สาขา
+                  <select id="branchSelect" name="branchCode" required></select>
+                </label>
+                <label>
+                  แผนกที่ตรวจ
+                  <select id="departmentSelect" name="departmentCode" required></select>
+                </label>
+                <label>
+                  รอบเดือน
+                  <input id="inspectionMonth" name="inspectionMonth" type="month" value="2026-08" required />
+                </label>
+                <label>
+                  วันที่ตรวจ
+                  <input id="inspectionDate" name="inspectionDate" type="date" required />
+                </label>
+                <label>
+                  ผู้ตรวจ
+                  <input id="inspectorName" name="inspectorName" type="text" value="ทีมตรวจ 5ส." required />
+                </label>
+                <label class="wide-field">
+                  สรุปถึงผู้บริหาร
+                  <input id="executiveNote" name="executiveNote" type="text" placeholder="เช่น ต้องติดตามพื้นที่รับรถ" />
+                </label>
+              </div>
+
+              <div class="table-wrap">
+                <table class="score-table">
+                  <thead>
+                    <tr>
+                      <th>หัวข้อตรวจ</th>
+                      <th>คะแนนเต็ม</th>
+                      <th>คะแนน</th>
+                      <th>หมายเหตุ</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="checklistRows"></tbody>
+                </table>
+              </div>
+
+              <div class="signature-panel">
+                <div class="panel-heading signature-heading">
+                  <div>
+                    <p class="eyebrow">รับทราบผลตรวจ</p>
+                    <h2>ลายเซ็น ผจก. แบบดิจิทัล</h2>
+                  </div>
+                  <button class="ghost-button" type="button" id="clearSignatureBtn">ล้างลายเซ็น</button>
+                </div>
+                <div class="form-grid">
+                  <label>
+                    ชื่อ ผจก. ผู้รับทราบ
+                    <input id="managerName" type="text" placeholder="ชื่อ-นามสกุล" />
+                  </label>
+                  <label>
+                    วันที่รับทราบ
+                    <input id="managerAckDate" type="date" />
+                  </label>
+                </div>
+                <canvas id="signatureCanvas" class="signature-canvas" width="900" height="220" aria-label="ช่องเซ็นรับทราบ"></canvas>
+              </div>
+
+              <div class="entry-footer">
+                <div class="score-box">
+                  <span>คะแนนรวม (%)</span>
+                  <strong id="formScore">0</strong>
+                  <small id="formStatus">-</small>
+                </div>
+                <small id="scoreDetail" class="score-detail">สูตร: คะแนนที่ได้ / คะแนนเต็ม x น้ำหนัก</small>
+                <button class="primary-button" type="submit">บันทึกผลตรวจ</button>
+              </div>
+            </form>
+          </article>
+
+        </section>
+
+        <section class="lower-grid">
+          <article class="panel page-section" data-page="dashboard">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Dashboard ผู้บริหาร</p>
+                <h2>คะแนนเฉลี่ยรายสาขา</h2>
+              </div>
+            </div>
+            <div class="bar-chart" id="branchChart" aria-label="กราฟคะแนนรายสาขา"></div>
+          </article>
+
+          <article id="history" class="panel wide-panel page-section" data-page="history">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">ประวัติย้อนหลัง</p>
+                <h2>รายการตรวจที่บันทึกจริง</h2>
+              </div>
+            </div>
+            <div class="form-grid history-filters">
+              <label>
+                สาขา
+                <select id="historyBranchFilter"></select>
+              </label>
+              <label>
+                เดือน
+                <input id="historyMonthFilter" type="month" />
+              </label>
+              <label>
+                ปี
+                <input id="historyYearFilter" type="number" min="2020" max="2100" placeholder="2026" />
+              </label>
+              <div class="template-actions">
+                <button class="ghost-button" type="button" id="historyFilterBtn">ค้นหา</button>
+              </div>
+            </div>
+            <div class="history-list" id="historyList"></div>
+            <div class="detail-panel" id="inspectionDetailPanel" hidden>
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">รายละเอียดผลตรวจ</p>
+                  <h2 id="inspectionDetailTitle">-</h2>
+                </div>
+              </div>
+              <div id="inspectionDetailContent"></div>
+            </div>
+          </article>
+
+          <article class="panel wide-panel page-section" data-page="annual">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Annual Summary</p>
+                <h2>สรุปคะแนนรายปีตามแผนก</h2>
+              </div>
+              <span class="status-pill" id="annualStatus">Ready</span>
+            </div>
+            <div class="form-grid">
+              <label>
+                แผนก
+                <select id="annualDepartmentSelect"></select>
+              </label>
+              <label>
+                ปี
+                <input id="annualYearInput" type="number" min="2020" max="2100" value="2026" />
+              </label>
+              <div class="template-actions">
+                <button class="ghost-button" type="button" id="annualLoadBtn">ดูสรุป</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead id="annualSummaryHead"></thead>
+                <tbody id="annualSummaryRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide-panel admin-only page-section" data-page="templates" hidden>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Template Editor</p>
+                <h2>เพิ่ม / แก้ไข / ลบหัวข้อตรวจ</h2>
+              </div>
+              <span class="status-pill" id="templateStatus">Ready</span>
+            </div>
+
+            <div class="form-grid template-controls">
+              <label>
+                เลือกสาขา
+                <select id="templateBranchSelect"></select>
+              </label>
+              <label>
+                เลือกแผนก
+                <select id="templateDepartmentSelect"></select>
+              </label>
+              <label class="wide-field">
+                ชื่อ Template
+                <input id="templateNameInput" type="text" />
+              </label>
+              <div class="template-actions">
+                <button class="ghost-button" type="button" id="addTemplateItemBtn">เพิ่มหัวข้อ</button>
+                <button class="primary-button" type="button" id="saveTemplateBtn">บันทึก Template</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>หัวข้อตรวจ</th>
+                    <th>คะแนนเต็ม</th>
+                    <th>น้ำหนัก</th>
+                    <th>ลบ</th>
+                  </tr>
+                </thead>
+                <tbody id="templateEditorRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article id="templates" class="panel wide-panel page-section" data-page="templates">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Template แผนก</p>
+                <h2>รายการชุดตรวจที่ใช้ซ้ำทุกเดือน</h2>
+              </div>
+            </div>
+            <div class="template-list" id="templateList"></div>
+          </article>
+
+          <article class="panel wide-panel admin-only page-section" data-page="admin" hidden>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Branch Admin</p>
+                <h2>เพิ่ม / แก้ไข / ลบสาขา</h2>
+              </div>
+              <span class="status-pill" id="branchStatus">Ready</span>
+            </div>
+
+            <div class="form-grid template-controls">
+              <label>
+                รหัสสาขา
+                <input id="branchCodeInput" type="text" placeholder="เช่น BN" />
+              </label>
+              <label>
+                ชื่อสาขา
+                <input id="branchNameInput" type="text" placeholder="ชื่อสาขา" />
+              </label>
+              <div class="template-actions">
+                <button class="primary-button" type="button" id="addBranchBtn">เพิ่มสาขา</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th>รหัส</th>
+                    <th>ชื่อสาขา</th>
+                    <th>บันทึก</th>
+                    <th>ลบ</th>
+                  </tr>
+                </thead>
+                <tbody id="branchEditorRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide-panel admin-only page-section" data-page="admin" hidden>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Department Admin</p>
+                <h2>เพิ่ม / แก้ไข / ลบแผนก</h2>
+              </div>
+              <span class="status-pill" id="departmentStatus">Ready</span>
+            </div>
+
+            <div class="form-grid template-controls">
+              <label>
+                รหัสแผนก
+                <input id="departmentCodeInput" type="text" placeholder="เช่น QC" />
+              </label>
+              <label>
+                ชื่อแผนก
+                <input id="departmentNameInput" type="text" placeholder="ชื่อแผนก" />
+              </label>
+              <div class="template-actions">
+                <button class="primary-button" type="button" id="addDepartmentBtn">เพิ่มแผนก</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th>รหัส</th>
+                    <th>ชื่อแผนก</th>
+                    <th>Template</th>
+                    <th>บันทึก</th>
+                    <th>ลบ</th>
+                  </tr>
+                </thead>
+                <tbody id="departmentEditorRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide-panel admin-only page-section" data-page="admin" hidden>
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">User Admin</p>
+                <h2>เพิ่ม / แก้ไข / ลบผู้ใช้งาน</h2>
+              </div>
+              <span class="status-pill" id="userStatus">Ready</span>
+            </div>
+            <div class="form-grid template-controls">
+              <label>
+                Username
+                <input id="newUsernameInput" type="text" placeholder="username" />
+              </label>
+              <label>
+                Password
+                <input id="newPasswordInput" type="text" placeholder="password" />
+              </label>
+              <label>
+                ชื่อผู้ใช้
+                <input id="newUserNameInput" type="text" placeholder="ชื่อ-นามสกุล" />
+              </label>
+              <label>
+                สิทธิ์
+                <select id="newUserRoleInput">
+                  <option value="Inspector">Inspector</option>
+                  <option value="Executive">Executive</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </label>
+              <div class="template-actions">
+                <button class="primary-button" type="button" id="addUserBtn">เพิ่ม User</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="score-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>ชื่อผู้ใช้</th>
+                    <th>สิทธิ์</th>
+                    <th>Password ใหม่</th>
+                    <th>บันทึก</th>
+                    <th>ลบ</th>
+                  </tr>
+                </thead>
+                <tbody id="userEditorRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

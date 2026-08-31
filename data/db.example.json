@@ -1,0 +1,391 @@
+{
+  "branches": [
+    {
+      "code": "PB",
+      "name": "เพชรบุรีตัดใหม่",
+      "area": "",
+      "image": ""
+    },
+    {
+      "code": "RI",
+      "name": "รามอินทรา",
+      "area": "",
+      "image": ""
+    },
+    {
+      "code": "SS",
+      "name": "สุขสวัสดิ์",
+      "area": "",
+      "image": ""
+    },
+    {
+      "code": "SW",
+      "name": "สุรวงศ์",
+      "area": "",
+      "image": ""
+    },
+    {
+      "code": "TW",
+      "name": "ทวีวัฒนา",
+      "area": "",
+      "image": ""
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin123",
+      "name": "ผู้ดูแลระบบ",
+      "role": "Admin"
+    },
+    {
+      "username": "inspector",
+      "password": "inspect123",
+      "name": "ผู้ตรวจ",
+      "role": "Inspector"
+    },
+    {
+      "username": "executive",
+      "password": "exec123",
+      "name": "ผู้บริหาร",
+      "role": "Executive"
+    }
+  ],
+  "departments": [
+    {
+      "code": "PB-SERVICE",
+      "name": "บริการ PB",
+      "templateId": "TPL-PB-SERVICE"
+    },
+    {
+      "code": "PB-COM",
+      "name": "คอมพิวเตอร์",
+      "templateId": "TPL-PB-COM"
+    },
+    {
+      "code": "PB-CASH",
+      "name": "การเงิน-ตรวจสอบ",
+      "templateId": "TPL-PB-CASH"
+    },
+    {
+      "code": "SW-CASH",
+      "name": "การเงิน (แคชเชียร์)",
+      "templateId": "TPL-SW-CASH"
+    },
+    {
+      "code": "RI-CASH",
+      "name": "การเงิน",
+      "templateId": "TPL-RI-CASH"
+    },
+    {
+      "code": "TW-CASH",
+      "name": "การเงิน",
+      "templateId": "TPL-TW-CASH"
+    },
+    {
+      "code": "SS-CASH",
+      "name": "การเงิน",
+      "templateId": "TPL-SS-CASH"
+    }
+  ],
+  "templates": [
+    {
+      "id": "TPL-PB-SERVICE",
+      "name": "แบบตรวจบริการ PB",
+      "departmentCode": "PB-SERVICE",
+      "items": [
+        {
+          "id": "PB01",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "พื้นที่รับรถ / ส่งมอบ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB02",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "เคาน์เตอร์พนักงานรับรถ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB03",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "ตู้ยาสำหรับพนักงาน/ห้องเลขาบริการ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB04",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "ห้องพักลูกค้า/มุมอินเตอร์เน็ต",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB05",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "ห้องผู้จัดการ (GS)",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-PB-COM",
+      "name": "แบบตรวจคอมพิวเตอร์",
+      "departmentCode": "PB-COM",
+      "items": [
+        {
+          "id": "PB-COM-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "โต็ะ/เก้าอี้",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-COM-1787211919991",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "ตู้เก็บเอกสาร/การจัดเก็บเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-COM-1787211920245",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "เครื่องคอมพิวเตอร์/เครื่องปริ๊น/อุปกรณ์ต่อพ่วง",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-COM-1787211920663",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "ถังขยะ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-COM-1787211921221",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "สภาพแวดล้อมโดยรวม",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-PB-CASH",
+      "name": "แบบตรวจการเงิน-ตรวจสอบ",
+      "departmentCode": "PB-CASH",
+      "items": [
+        {
+          "id": "PB-CASH-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "โต๊ะ/เก้าอี้",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-CASH-1787212358643",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "ตู้เก็บเอกสาร/การจัดเก็บเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-CASH-1787212358821",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "เครื่องคอมพิวเตอร์/เครื่องปริ๊น/อุปกรณ์ต่อพ่วง",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-CASH-1787212359111",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "ถังขยะ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "PB-CASH-1787212359493",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "สภาพแวดล้อมโดยรวม (พื้นห้อง/ทางเดิน/ผนัง/บอร์ด)",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-SW-CASH",
+      "name": "แบบตรวจการเงิน (แคชเชียร์)",
+      "departmentCode": "SW-CASH",
+      "items": [
+        {
+          "id": "SW-CASH-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "โต๊ะ/เก้าอี้",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SW-CASH-1787213505324",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "ตู้เก็บเอกสาร/การจัดเก็บเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SW-CASH-1787213505568",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "เครื่องคอมพิวเตอร์/เครื่องปริ๊น/อุปกรณ์ต่อพ่วง",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SW-CASH-1787213505740",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "ถังขยะ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SW-CASH-1787213505922",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "สภาพแวดล้อมโดยรวม (พื้นห้อง/ทางเดิน/ผนัง/บอร์ด)",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-RI-CASH",
+      "name": "แบบตรวจการเงิน",
+      "departmentCode": "RI-CASH",
+      "items": [
+        {
+          "id": "RI-CASH-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "โต๊ะ/เก้าอี้",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "RI-CASH-1787213405322",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "ตู้เก็บเอกสาร/การจัดเก็บเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "RI-CASH-1787213405524",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "เครื่องคอมพิวเตอร์/เครื่องปริ๊น/อุปกรณ์ต่อพ่วง",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "RI-CASH-1787213405692",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "เครื่องถ่ายเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "RI-CASH-1787213405864",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "ถังขยะ",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-TW-CASH",
+      "name": "แบบตรวจการเงิน",
+      "departmentCode": "TW-CASH",
+      "items": [
+        {
+          "id": "TW-CASH-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "หัวข้อตรวจใหม่",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "id": "TPL-SS-CASH",
+      "name": "แบบตรวจการเงิน",
+      "departmentCode": "SS-CASH",
+      "items": [
+        {
+          "id": "SS-CASH-001",
+          "itemNo": 1,
+          "category": "ทั่วไป",
+          "title": "โต๊ะ/เก้าอี้",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SS-CASH-1787213460284",
+          "itemNo": 2,
+          "category": "ทั่วไป",
+          "title": "ตู้เก็บเอกสาร/การจัดเก็บเอกสาร",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SS-CASH-1787213460458",
+          "itemNo": 3,
+          "category": "ทั่วไป",
+          "title": "เครื่องคอมพิวเตอร์/เครื่องปริ๊น/อุปกรณ์ต่อพ่วง",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SS-CASH-1787213460622",
+          "itemNo": 4,
+          "category": "ทั่วไป",
+          "title": "ถังขยะ",
+          "maxScore": 5,
+          "weight": 5
+        },
+        {
+          "id": "SS-CASH-1787213461324",
+          "itemNo": 5,
+          "category": "ทั่วไป",
+          "title": "สภาพแวดล้อมโดยรวม (พื้นห้อง/ทางเดิน/ผนัง/บอร์ด)",
+          "maxScore": 5,
+          "weight": 5
+        }
+      ]
+    }
+  ],
+  "inspections": []
+}

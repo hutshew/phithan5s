@@ -1,0 +1,14 @@
+{
+  "name": "phithan5s",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ระบบตรวจรายงานและประเมิณ 5 ส",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

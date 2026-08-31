@@ -1,4 +1,5 @@
 export const seed = {
+  "seedVersion": "2026-08-31-templates-from-local",
   "branches": [
     {
       "code": "PB",

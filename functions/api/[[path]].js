@@ -6,6 +6,50 @@ globalThis.__phithan5sDb = db;
 globalThis.__phithan5sSessions = sessions;
 const DB_STATE_KEY = "phithan5s";
 
+function mergeByKey(targetRows = [], seedRows = [], key) {
+  let changed = false;
+  const rows = Array.isArray(targetRows) ? [...targetRows] : [];
+  seedRows.forEach((seedRow) => {
+    const index = rows.findIndex((row) => row[key] === seedRow[key]);
+    if (index < 0) {
+      rows.push(structuredClone(seedRow));
+      changed = true;
+      return;
+    }
+
+    const currentSize = JSON.stringify(rows[index] || {}).length;
+    const seedSize = JSON.stringify(seedRow || {}).length;
+    if (key === "id" && seedSize > currentSize) {
+      rows[index] = structuredClone(seedRow);
+      changed = true;
+    }
+  });
+  return { rows, changed };
+}
+
+function mergeSeedData(current) {
+  const next = current && typeof current === "object" ? structuredClone(current) : structuredClone(seed);
+  let changed = false;
+
+  [
+    ["branches", "code"],
+    ["departments", "code"],
+    ["templates", "id"],
+    ["inspections", "id"],
+  ].forEach(([collection, key]) => {
+    const merged = mergeByKey(next[collection], seed[collection], key);
+    next[collection] = merged.rows;
+    changed = changed || merged.changed;
+  });
+
+  if (next.seedVersion !== seed.seedVersion) {
+    next.seedVersion = seed.seedVersion;
+    changed = true;
+  }
+
+  return { db: next, changed };
+}
+
 async function loadDb(env) {
   if (!env.DB) return globalThis.__phithan5sDb || structuredClone(seed);
 
@@ -14,7 +58,15 @@ async function loadDb(env) {
       "CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)",
     ).run();
     const row = await env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(DB_STATE_KEY).first();
-    if (row?.value) return JSON.parse(row.value);
+    if (row?.value) {
+      const merged = mergeSeedData(JSON.parse(row.value));
+      if (merged.changed) {
+        await env.DB.prepare(
+          "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+        ).bind(DB_STATE_KEY, JSON.stringify(merged.db), new Date().toISOString()).run();
+      }
+      return merged.db;
+    }
 
     await env.DB.prepare("INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?)").bind(
       DB_STATE_KEY,

@@ -1,10 +1,9 @@
 import { seed } from "../_seed.js";
 
 let db = globalThis.__phithan5sDb || structuredClone(seed);
-const sessions = globalThis.__phithan5sSessions || new Map();
 globalThis.__phithan5sDb = db;
-globalThis.__phithan5sSessions = sessions;
 const DB_STATE_KEY = "phithan5s";
+const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function mergeByKey(targetRows = [], seedRows = [], key) {
   let changed = false;
@@ -112,22 +111,80 @@ function publicUser(user) {
   return safe;
 }
 
-function sessionUser(request) {
+function base64UrlEncode(input) {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function base64UrlDecode(input) {
+  const normalized = input.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(input.length / 4) * 4, "=");
+  const binary = atob(normalized);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function tokenSignature(payload, secret) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return base64UrlEncode(new Uint8Array(signature));
+}
+
+async function createAuthToken(username, env) {
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      username,
+      exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
+    }),
+  );
+  const signature = await tokenSignature(payload, env.AUTH_SECRET || "phithan5s-dev-secret");
+  return `${payload}.${signature}`;
+}
+
+async function readAuthToken(request, env) {
   const header = request.headers.get("Authorization") || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
-  const username = sessions.get(token);
+  if (!token || !token.includes(".")) return { token: "", username: "" };
+
+  try {
+    const [payload, signature] = token.split(".");
+    const expected = await tokenSignature(payload, env.AUTH_SECRET || "phithan5s-dev-secret");
+    if (signature !== expected) return { token: "", username: "" };
+
+    const claims = JSON.parse(base64UrlDecode(payload));
+    if (!claims.username || Number(claims.exp || 0) < Math.floor(Date.now() / 1000)) {
+      return { token: "", username: "" };
+    }
+
+    return { token, username: claims.username };
+  } catch {
+    return { token: "", username: "" };
+  }
+}
+
+async function sessionUser(request, env) {
+  const { token, username } = await readAuthToken(request, env);
   const user = db.users.find((row) => row.username === username);
   return { token, user };
 }
 
-function requireLogin(request) {
-  const { user } = sessionUser(request);
+async function requireLogin(request, env) {
+  const { user } = await sessionUser(request, env);
   if (!user) return [null, json({ error: "กรุณา login ก่อน" }, 401)];
   return [user, null];
 }
 
-function requireAdmin(request) {
-  const [user, error] = requireLogin(request);
+async function requireAdmin(request, env) {
+  const [user, error] = await requireLogin(request, env);
   if (error) return [null, error];
   if (user.role !== "Admin") return [null, json({ error: "ต้องใช้สิทธิ์ Admin" }, 403)];
   return [user, null];
@@ -246,23 +303,20 @@ export async function onRequest(context) {
     const input = await body(request);
     const user = db.users.find((row) => row.username === input.username && row.password === input.password);
     if (!user) return json({ error: "username หรือ password ไม่ถูกต้อง" }, 401);
-    const token = crypto.randomUUID();
-    sessions.set(token, user.username);
+    const token = await createAuthToken(user.username, env);
     return json({ token, user: publicUser(user) });
   }
 
   if (method === "POST" && path === "logout") {
-    const { token } = sessionUser(request);
-    if (token) sessions.delete(token);
     return json({ success: true });
   }
 
   if (method === "GET" && path === "me") {
-    return json({ user: publicUser(sessionUser(request).user) });
+    return json({ user: publicUser((await sessionUser(request, env)).user) });
   }
 
   if (method === "GET" && path === "bootstrap") {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     return json({
       branches: db.branches,
@@ -272,19 +326,19 @@ export async function onRequest(context) {
   }
 
   if (method === "GET" && path === "dashboard") {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     return json(buildDashboard(url.searchParams.get("month")));
   }
 
   if (method === "GET" && path === "users") {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     return json(db.users.map(publicUser));
   }
 
   if (method === "POST" && path === "users") {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const input = await body(request);
     const username = String(input.username || "").trim();
@@ -297,7 +351,7 @@ export async function onRequest(context) {
   }
 
   if (method === "PUT" && path.startsWith("users/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const username = decodeURIComponent(path.slice("users/".length));
     const user = db.users.find((row) => row.username === username);
@@ -311,7 +365,7 @@ export async function onRequest(context) {
   }
 
   if (method === "DELETE" && path.startsWith("users/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const username = decodeURIComponent(path.slice("users/".length));
     if (username === "admin") return json({ error: "ไม่สามารถลบ admin หลักได้" }, 400);
@@ -321,7 +375,7 @@ export async function onRequest(context) {
   }
 
   if (method === "POST" && path === "branches") {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const input = await body(request);
     const code = String(input.code || "").trim().toUpperCase();
@@ -334,7 +388,7 @@ export async function onRequest(context) {
   }
 
   if (method === "PUT" && path.startsWith("branches/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const code = decodeURIComponent(path.slice("branches/".length));
     const branch = db.branches.find((row) => row.code === code);
@@ -345,7 +399,7 @@ export async function onRequest(context) {
   }
 
   if (method === "DELETE" && path.startsWith("branches/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const code = decodeURIComponent(path.slice("branches/".length));
     if (db.inspections.some((row) => row.branchCode === code)) return json({ error: "มีประวัติตรวจของสาขานี้อยู่ ไม่สามารถลบได้" }, 409);
@@ -355,7 +409,7 @@ export async function onRequest(context) {
   }
 
   if (method === "POST" && path === "departments") {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const input = await body(request);
     const code = String(input.code || "").trim().toUpperCase();
@@ -374,7 +428,7 @@ export async function onRequest(context) {
   }
 
   if (method === "PUT" && path.startsWith("departments/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const code = decodeURIComponent(path.slice("departments/".length));
     const department = db.departments.find((row) => row.code === code);
@@ -385,7 +439,7 @@ export async function onRequest(context) {
   }
 
   if (method === "DELETE" && path.startsWith("departments/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const code = decodeURIComponent(path.slice("departments/".length));
     if (db.inspections.some((row) => row.departmentCode === code)) return json({ error: "มีประวัติตรวจของแผนกนี้อยู่ ไม่สามารถลบได้" }, 409);
@@ -396,7 +450,7 @@ export async function onRequest(context) {
   }
 
   if (method === "GET" && path.startsWith("templates/")) {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     const id = decodeURIComponent(path.slice("templates/".length));
     const template = db.templates.find((row) => row.id === id);
@@ -404,7 +458,7 @@ export async function onRequest(context) {
   }
 
   if (method === "PUT" && path.startsWith("templates/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const id = decodeURIComponent(path.slice("templates/".length));
     const template = db.templates.find((row) => row.id === id);
@@ -424,7 +478,7 @@ export async function onRequest(context) {
   }
 
   if (method === "GET" && path === "inspections") {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     const branch = url.searchParams.get("branch");
     const month = url.searchParams.get("month");
@@ -439,7 +493,7 @@ export async function onRequest(context) {
   }
 
   if (method === "GET" && path.startsWith("inspections/")) {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     const id = decodeURIComponent(path.slice("inspections/".length));
     const inspection = db.inspections.map(withCalculatedScore).find((row) => row.id === id);
@@ -447,7 +501,7 @@ export async function onRequest(context) {
   }
 
   if (method === "DELETE" && path.startsWith("inspections/")) {
-    const [, error] = requireAdmin(request);
+    const [, error] = await requireAdmin(request, env);
     if (error) return error;
     const id = decodeURIComponent(path.slice("inspections/".length));
     db.inspections = db.inspections.filter((row) => row.id !== id);
@@ -456,7 +510,7 @@ export async function onRequest(context) {
   }
 
   if (method === "POST" && path === "inspections") {
-    const [user, error] = requireLogin(request);
+    const [user, error] = await requireLogin(request, env);
     if (error) return error;
     const input = await body(request);
     const branch = db.branches.find((row) => row.code === input.branchCode);
@@ -498,7 +552,7 @@ export async function onRequest(context) {
   }
 
   if (method === "GET" && path === "annual-summary") {
-    const [, error] = requireLogin(request);
+    const [, error] = await requireLogin(request, env);
     if (error) return error;
     const departmentCode = url.searchParams.get("departmentCode");
     const selectedGroup = departmentGroupCode(departmentCode).toUpperCase();

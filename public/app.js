@@ -309,6 +309,16 @@ async function refreshBootstrap() {
   renderDepartmentEditor();
 }
 
+async function loadProtectedData() {
+  await refreshBootstrap();
+  updateBranchImage();
+  await loadTemplateForDepartment();
+  await loadTemplateEditor();
+  await refreshDashboard();
+  await loadHistory();
+  await loadAnnualSummary();
+}
+
 async function loadTemplateForDepartment() {
   const department = state.departments.find((item) => item.code === departmentSelect.value);
   if (!department) {
@@ -440,7 +450,8 @@ async function login(event) {
     state.auth = auth;
     localStorage.setItem("inspection-auth", JSON.stringify(auth));
     renderAuth();
-    renderBranchEditor();
+    await loadProtectedData();
+    showPage(state.currentPage || "dashboard");
   } catch (error) {
     saveStatus.textContent = error.message;
     saveStatus.className = "status-pill error";
@@ -1093,13 +1104,9 @@ async function init() {
   managerAckDate.value = today();
   await validateAuth();
   renderAuth();
-  await refreshBootstrap();
-  updateBranchImage();
-  await loadTemplateForDepartment();
-  await loadTemplateEditor();
-  await refreshDashboard();
-  await loadHistory();
-  await loadAnnualSummary();
+  if (state.auth) {
+    await loadProtectedData();
+  }
   resizeSignatureCanvas();
   showPage(state.auth ? state.currentPage : "");
 }

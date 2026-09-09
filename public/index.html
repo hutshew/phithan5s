@@ -19,7 +19,7 @@
         <nav class="nav-list" aria-label="เมนูหลัก">
           <a class="active" href="#dashboard" data-page-link="dashboard">Dashboard</a>
           <a href="#entry" data-page-link="entry">กรอกผลตรวจ</a>
-          <a href="#history" data-page-link="history">ประวัติย้อนหลัง</a>
+          <a href="#history" data-page-link="history">รายงานผลตรวจ</a>
           <a href="#annual" data-page-link="annual">สรุปรายปี</a>
           <a href="#templates" data-page-link="templates">Template</a>
           <a href="#admin" data-page-link="admin" class="admin-nav" hidden>Admin</a>
@@ -187,7 +187,7 @@
           <article id="history" class="panel wide-panel page-section" data-page="history">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">ประวัติย้อนหลัง</p>
+                <p class="eyebrow">รายงานผลตรวจ</p>
                 <h2>รายการตรวจที่บันทึกจริง</h2>
               </div>
             </div>
@@ -387,6 +387,10 @@
                 <h2>เพิ่ม / แก้ไข / ลบผู้ใช้งาน</h2>
               </div>
               <span class="status-pill" id="userStatus">Ready</span>
+            </div>
+            <div class="backup-actions">
+              <button class="ghost-button" type="button" id="backupDbBtn">Auto Backup Database</button>
+              <span class="status-pill" id="backupStatus">Ready</span>
             </div>
             <div class="form-grid template-controls">
               <label>

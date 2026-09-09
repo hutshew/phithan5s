@@ -374,6 +374,17 @@ export async function onRequest(context) {
     return json({ success: true });
   }
 
+  if (method === "GET" && path === "backup") {
+    const [user, error] = await requireAdmin(request, env);
+    if (error) return error;
+    return json({
+      exportedAt: new Date().toISOString(),
+      exportedBy: publicUser(user),
+      source: env.DB ? "cloudflare-d1" : "local-json",
+      data: db,
+    });
+  }
+
   if (method === "POST" && path === "branches") {
     const [, error] = await requireAdmin(request, env);
     if (error) return error;

@@ -5,6 +5,7 @@ node_modules/
 # Local runtime database and uploaded signatures/evidence.
 data/db.json
 data/*.tmp
+backups/
 public/uploads/*
 !public/uploads/.gitkeep
 

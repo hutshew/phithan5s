@@ -546,6 +546,14 @@ input {
   align-items: end;
 }
 
+.backup-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
 .row-button {
   width: 38px;
   height: 38px;
@@ -635,6 +643,16 @@ input {
 .history-row span,
 .history-row small {
   color: #637184;
+}
+
+.history-row small {
+  display: grid;
+  gap: 5px;
+}
+
+.history-meta {
+  color: #172033;
+  font-weight: 800;
 }
 
 .history-row em {

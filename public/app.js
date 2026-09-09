@@ -49,6 +49,8 @@ const annualSummaryHead = document.querySelector("#annualSummaryHead");
 const annualSummaryRows = document.querySelector("#annualSummaryRows");
 const userStatus = document.querySelector("#userStatus");
 const userEditorRows = document.querySelector("#userEditorRows");
+const backupDbBtn = document.querySelector("#backupDbBtn");
+const backupStatus = document.querySelector("#backupStatus");
 let editingTemplate = null;
 let hasSignature = false;
 let drawingSignature = false;
@@ -73,6 +75,29 @@ function statusForPercent(percent) {
   if (percent >= 80) return ["pass", "ผ่าน"];
   if (percent >= 70) return ["fix", "ต้องแก้ไข"];
   return ["risk", "ความเสี่ยง"];
+}
+
+function gradeForPercent(percent) {
+  const value = Number(percent || 0);
+  if (value >= 95) return { grade: "A+", label: "A+", className: "pass" };
+  if (value >= 91) return { grade: "A", label: "A", className: "pass" };
+  if (value >= 85) return { grade: "B+", label: "B+", className: "pass" };
+  if (value >= 81) return { grade: "B", label: "B", className: "pass" };
+  if (value >= 75) return { grade: "C+", label: "C+", className: "fix" };
+  if (value >= 71) return { grade: "C", label: "C", className: "fix" };
+  if (value >= 65) return { grade: "D+", label: "D+", className: "risk" };
+  if (value >= 61) return { grade: "D", label: "D", className: "risk" };
+  return { grade: "ไม่ผ่านต้องแก้ไข", label: "ไม่ผ่าน", className: "risk" };
+}
+
+function inspectionItemSummary(row) {
+  const scores = Array.isArray(row?.scores) ? row.scores : [];
+  const passed = scores.filter((score) => Number(score.score || 0) >= 3).length;
+  return {
+    total: scores.length,
+    passed,
+    fix: scores.length - passed,
+  };
 }
 
 async function api(path, options) {
@@ -853,14 +878,16 @@ function renderHistory(rows) {
     .map((row) => {
       const branch = state.branches.find((item) => item.code === row.branchCode);
       const department = state.departments.find((item) => item.code === row.departmentCode);
-      const [className] = statusForPercent(row.percent);
+      const grade = gradeForPercent(row.percent);
+      const itemSummary = inspectionItemSummary(row);
       return `
         <div class="history-row clickable" data-id="${row.id}">
           <span>${row.inspectionDate}</span>
           <strong>${branch?.name || row.branchCode} / ${department?.name || row.departmentCode}</strong>
-          <em class="${className}">${row.status} ${row.percent}</em>
+          <em class="${grade.className}">เกรด ${grade.label} ${row.percent}%</em>
           <small>
-            ${row.executiveNote || "-"}
+            <span class="history-meta">ทั้งหมด ${itemSummary.total} หัวข้อ | ผ่าน ${itemSummary.passed} | ต้องแก้ไข ${itemSummary.fix}</span>
+            <span>${row.executiveNote || "-"}</span>
             ${row.managerSignaturePath ? `<button class="link-button" type="button" data-action="show-signature" data-id="${row.id}">ดูลายเซ็น</button>` : ""}
             <button class="link-button" type="button" data-action="export-pdf" data-id="${row.id}">Export PDF</button>
             ${isAdmin() ? `<button class="link-button danger-link" type="button" data-action="delete-inspection" data-id="${row.id}">ลบ</button>` : ""}
@@ -915,6 +942,8 @@ async function loadAnnualSummary() {
 function inspectionToPrintableHtml(row) {
   const branch = state.branches.find((item) => item.code === row.branchCode);
   const department = state.departments.find((item) => item.code === row.departmentCode);
+  const grade = gradeForPercent(row.percent);
+  const itemSummary = inspectionItemSummary(row);
   const itemRows = row.scores
     .map((score, index) => {
       return `<tr><td>${index + 1}</td><td>${score.title || score.itemId}</td><td>${score.score}/${score.maxScore || ""}</td><td>${score.remark || "-"}</td></tr>`;
@@ -946,7 +975,8 @@ function inspectionToPrintableHtml(row) {
           <div><strong>เดือน:</strong> ${row.inspectionMonth}</div>
           <div><strong>วันที่ตรวจ:</strong> ${row.inspectionDate}</div>
           <div><strong>ผู้ตรวจ:</strong> ${row.inspectorName}</div>
-          <div><strong>คะแนน:</strong> ${row.totalScore}/${row.maxScore} (${row.percent}%) ${row.status}</div>
+          <div><strong>คะแนน:</strong> ${row.totalScore}/${row.maxScore} (${row.percent}%) เกรด ${grade.grade}</div>
+          <div><strong>จำนวนหัวข้อ:</strong> ทั้งหมด ${itemSummary.total} | ผ่าน ${itemSummary.passed} | ต้องแก้ไข ${itemSummary.fix}</div>
           <div><strong>ผจก. รับทราบ:</strong> ${row.managerAckName || "-"} ${row.managerAckDate || ""}</div>
           <div><strong>หมายเหตุ:</strong> ${row.executiveNote || "-"}</div>
         </div>
@@ -976,6 +1006,8 @@ async function showInspectionDetail(id) {
   const row = await api(`/api/inspections/${encodeURIComponent(id)}`);
   const branch = state.branches.find((item) => item.code === row.branchCode);
   const department = state.departments.find((item) => item.code === row.departmentCode);
+  const grade = gradeForPercent(row.percent);
+  const itemSummary = inspectionItemSummary(row);
   inspectionDetailTitle.textContent = row.id;
   inspectionDetailContent.innerHTML = `
     <div class="detail-grid">
@@ -984,7 +1016,10 @@ async function showInspectionDetail(id) {
       <div><span>รอบเดือน</span><strong>${row.inspectionMonth}</strong></div>
       <div><span>วันที่ตรวจ</span><strong>${row.inspectionDate}</strong></div>
       <div><span>ผู้ตรวจ</span><strong>${row.inspectorName}</strong></div>
-      <div><span>คะแนน</span><strong>${row.totalScore}/${row.maxScore} (${row.percent}%) ${row.status}</strong></div>
+      <div><span>คะแนน</span><strong>${row.totalScore}/${row.maxScore} (${row.percent}%) เกรด ${grade.grade}</strong></div>
+      <div><span>จำนวนหัวข้อทั้งหมด</span><strong>${itemSummary.total}</strong></div>
+      <div><span>ผ่านกี่หัวข้อ</span><strong>${itemSummary.passed}</strong></div>
+      <div><span>ต้องแก้ไขกี่หัวข้อ</span><strong>${itemSummary.fix}</strong></div>
       <div><span>ผจก. รับทราบ</span><strong>${row.managerAckName || "-"}</strong></div>
       <div><span>วันที่รับทราบ</span><strong>${row.managerAckDate || "-"}</strong></div>
       <div><span>สรุปถึงผู้บริหาร</span><strong>${row.executiveNote || "-"}</strong></div>
@@ -1031,6 +1066,32 @@ async function deleteInspection(row) {
     await loadHistory();
   } catch (error) {
     alert(error.message);
+  }
+}
+
+async function backupDatabase() {
+  if (!isAdmin()) return;
+  backupStatus.textContent = "Preparing...";
+  backupStatus.className = "status-pill";
+  try {
+    const backup = await api("/api/backup");
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date().toISOString().replaceAll(":", "-").slice(0, 19);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `phithan5s-backup-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    backupStatus.textContent = "Downloaded";
+    backupStatus.className = "status-pill saved";
+  } catch (error) {
+    backupStatus.textContent = error.message;
+    backupStatus.className = "status-pill error";
   }
 }
 
@@ -1148,6 +1209,7 @@ departmentEditorRows.addEventListener("click", (event) => {
   if (action === "delete-department") deleteDepartment(row);
 });
 document.querySelector("#addUserBtn").addEventListener("click", addUser);
+backupDbBtn.addEventListener("click", backupDatabase);
 userEditorRows.addEventListener("click", (event) => {
   const action = event.target?.dataset?.action;
   const row = event.target.closest("tr");
